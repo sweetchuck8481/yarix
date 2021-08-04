@@ -13,7 +13,6 @@ import yara
 import yaramod
 import timeout_decorator
 
-
 class FormulaBuilder(yaramod.ObservingVisitor):
     def __init__(self):
         super().__init__()
@@ -158,7 +157,7 @@ class FormulaBuilder(yaramod.ObservingVisitor):
         expr.left_operand.accept(self)
         expr.right_operand.accept(self)
 
-    def visit_ForIntExpression(self, expr):
+    def visit_ForArrayExpression(self, expr):
         expr.body.accept(self)
         #self.ret.append(self.newsym(expr))
 
@@ -402,7 +401,7 @@ def simplify_expression_(rule, expr, containsexpr=False):
 
     undoable = [
         yaramod.IntLiteralExpression, yaramod.IntFunctionExpression, yaramod.FunctionCallExpression,
-        yaramod.FilesizeExpression, yaramod.StructAccessExpression, yaramod.ForIntExpression
+        yaramod.FilesizeExpression, yaramod.StructAccessExpression, yaramod.ForArrayExpression
     ]
 
     texpr = type(expr)
@@ -454,7 +453,7 @@ def simplify_expression_(rule, expr, containsexpr=False):
     elif texpr == yaramod.ThemExpression:
         return (len(rule.strings), [YaraString(s.pure_text, s.is_regexp, s.is_hex, s.is_wide, s.is_ascii, s.is_nocase) for s in rule.strings])
     elif texpr == yaramod.OfExpression:
-        v, s = expr.variable, expr.iterated_set
+        v, s = expr.variable, expr.iterable
         tv, ts = type(v), type(s)
         _, ids = simplify_expression_(rule, s)
         if tv == yaramod.IntLiteralExpression:
@@ -617,7 +616,8 @@ def evaluate_rule(rule, index, lowerbound=4, groupwidth=None, tau=None):
     return ret
 
 def seqyarascan(paths, rule):
-    rule = yara.compile(source="import \"pe\"\nimport \"elf\"\n" + rule.text)
-    for p in paths:
-        if rule.match(p):
-            yield p
+   rule = yara.compile(source="import \"pe\"\nimport \"elf\"\n" + rule.text)
+   for p in paths:
+       if rule.match(p):
+           yield p
+
